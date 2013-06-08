@@ -80,6 +80,11 @@ end
 url = "https://aur.archlinux.org/packages/#{pkg[0..1]}/#{pkg}/#{pkg}.tar.gz"
 tarball = "#{aurdir}/#{pkg}.tar.gz"
 
+def die
+  puts error + $!.to_s + plain
+  exit
+end
+
 # Download tarball
 begin
   File.open(tarball, 'wb') {|f| f.write open(url).read }
@@ -88,8 +93,7 @@ rescue OpenURI::HTTPError
   puts url
   exit
 rescue
-  puts error + $!.to_s + plain
-  exit
+  die
 end
 
 # Extract
@@ -97,8 +101,7 @@ begin
   tgz = Zlib::GzipReader.new(File.open(tarball, 'rb'))
   Archive::Tar::Minitar.unpack(tgz, aurdir)
 rescue
-  puts error + $!.to_s + plain
-  exit
+  die
 end
 
 # Build
@@ -133,8 +136,7 @@ end
 begin
   File.delete(tarball)
 rescue
-  puts error + $!.to_s + plain
-  exit
+  die
 end
 
 puts info + "Installed #{pkg}" + plain
