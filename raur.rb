@@ -61,15 +61,15 @@ pkgdir = "#{aurdir}/#{pkg}"
 # Determine if a package directory with this name exists
 if File.directory? pkgdir
   print INFO + "Remove existing directory #{pkgdir} ? [y/n] " + PLAIN
-  puts STDIN.getch
-  case $_
+  puts input = STDIN.getch
+  case input
   when 'y', 'Y'
     puts INFO + "Removing #{pkgdir}" + PLAIN
     FileUtils.rm_rf pkgdir
   else
     print INFO + "Continue building #{pkg} ? [y/n] " + PLAIN
-    puts STDIN.getch
-    case $_
+    puts input = STDIN.getch
+    case input
     when 'y', 'Y'
       puts INFO + "Writing over existing #{pkgdir}" + PLAIN
     else
