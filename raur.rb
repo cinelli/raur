@@ -115,14 +115,7 @@ unless $?.to_i.zero?
 end
 
 # Sort files in package directory chronologically
-files = Dir.entries(pkgdir).sort_by {|f| File.mtime(File.join(pkgdir, f)) }
-
-# Find the first pkg.tar.xz file in the list
-pkgfile = nil
-files.map do |f|
-  pkgfile = f.match(/.*.pkg.tar.xz/)
-  break unless pkgfile.nil?
-end
+pkgfile = Dir.entries(pkgdir).sort_by{|f| File.mtime(File.join(pkgdir,f))}.last
 
 # Install
 # TODO: Add --noconfirm option
