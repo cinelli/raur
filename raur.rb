@@ -89,7 +89,7 @@ end
 # Download tarball
 begin
   File.open(tarball, 'wb') {|f| f.write open(url).read }
-rescue OpenURI::HTTPERROR
+rescue OpenURI::HTTPError
   puts ERROR + $!.to_s + PLAIN
   puts url
   exit
