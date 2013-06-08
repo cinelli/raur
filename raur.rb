@@ -127,10 +127,6 @@ unless $?.to_i.zero?
 end
 
 # Cleanup
-begin
-  File.delete(tarball)
-rescue
-  die
-end
+begin File.delete(tarball) rescue die end
 
 puts INFO + "Installed #{pkg}" + PLAIN
