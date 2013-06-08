@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+#
 # raur
 # A simple AUR helper in Ruby
 # Depends on pacman, makepkg, sudo, and the minitar gem
@@ -17,7 +18,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. 
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 aurdir = "/home/user/aur" # Change this
 
@@ -26,32 +27,32 @@ require 'io/console'
 require 'open-uri'
 
 # Colors
-red   = "\e[1;31m"
-green = "\e[0;32m"
-white = "\e[1;37m"
-plain = "\e[0;0m"
+RED   = "\e[1;31m"
+GREEN = "\e[0;32m"
+WHITE = "\e[1;37m"
+PLAIN = "\e[0;0m"
 
-error = "#{red}==> ERROR: #{white}"
-info  = "#{green}==> #{white}"
+ERROR = "#{RED}==> ERROR: #{WHITE}"
+INFO  = "#{GREEN}==> #{WHITE}"
 
 pkg = ARGV.first
 
 if pkg.nil?
-  puts error + "No argument given. Specify the AUR package you want to build."
-  puts info + "USAGE: raur pkgname" + plain
+  puts ERROR + "No argument given. Specify the AUR package you want to build."
+  puts INFO + "USAGE: raur pkgname" + PLAIN
   exit
 end
 
 # Check for required executables
 %w(/usr/bin/pacman /usr/bin/makepkg /usr/bin/sudo).each do |file|
   unless File.executable? file
-    puts error + "#{file} does not exist or is not executable." + plain
+    puts ERROR + "#{file} does not exist or is not executable." + PLAIN
     exit
   end
 end
 
 unless File.writable? aurdir
-  puts error + "Directory #{aurdir} does not exist or is not writable." + plain
+  puts ERROR + "Directory #{aurdir} does not exist or is not writable." + PLAIN
   exit
 end
 
@@ -59,18 +60,18 @@ pkgdir = "#{aurdir}/#{pkg}"
 
 # Determine if a package directory with this name exists
 if File.directory? pkgdir
-  print info + "Remove existing directory #{pkgdir} ? [y/n] " + plain
+  print INFO + "Remove existing directory #{pkgdir} ? [y/n] " + PLAIN
   puts input = STDIN.getch
   case input
   when 'y', 'Y'
-    puts info + "Removing #{pkgdir}" + plain
+    puts INFO + "Removing #{pkgdir}" + PLAIN
     FileUtils.rm_rf pkgdir
   else
-    print info + "Continue building #{pkg} ? [y/n] " + plain
+    print INFO + "Continue building #{pkg} ? [y/n] " + PLAIN
     puts input = STDIN.getch
     case input
     when 'y', 'Y'
-      puts info + "Writing over existing #{pkgdir}" + plain
+      puts INFO + "Writing over existing #{pkgdir}" + PLAIN
     else
       exit
     end
@@ -81,15 +82,15 @@ url = "https://aur.archlinux.org/packages/#{pkg[0..1]}/#{pkg}/#{pkg}.tar.gz"
 tarball = "#{aurdir}/#{pkg}.tar.gz"
 
 def die
-  puts error + $!.to_s + plain
+  puts ERROR + $!.to_s + PLAIN
   exit
 end
 
 # Download tarball
 begin
   File.open(tarball, 'wb') {|f| f.write open(url).read }
-rescue OpenURI::HTTPError
-  puts error + $!.to_s + plain
+rescue OpenURI::HTTPERROR
+  puts ERROR + $!.to_s + PLAIN
   puts url
   exit
 rescue
@@ -109,7 +110,7 @@ Dir.chdir(pkgdir)
 system 'makepkg -sf'
 
 unless $?.to_i.zero?
-  puts error + "makepkg failed." + plain
+  puts ERROR + "makepkg failed." + PLAIN
   exit
 end
 
@@ -128,7 +129,7 @@ end
 system "sudo pacman -U #{pkgfile}"
 
 unless $?.to_i.zero?
-  puts error + "Failed to install #{pkgfile}" + plain
+  puts ERROR + "Failed to install #{pkgfile}" + PLAIN
   exit
 end
 
@@ -139,4 +140,4 @@ rescue
   die
 end
 
-puts info + "Installed #{pkg}" + plain
+puts INFO + "Installed #{pkg}" + PLAIN
