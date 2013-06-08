@@ -16,34 +16,27 @@ green = "\e[0;32m"
 white = "\e[1;37m"
 plain = "\e[0;0m"
 
-error_header = "#{red}==> ERROR: #{white}"
-info_header = "#{green}==> #{white}"
+error = "#{red}==> ERROR: #{white}"
+info  = "#{green}==> #{white}"
 
 pkg = ARGV.first
 
 if pkg.nil?
-  print error_header
-  puts "No argument given. Specify the AUR package you want to build."
-  print info_header
-  puts "USAGE: raur pkgname"
-  print plain
+  puts error + "No argument given. Specify the AUR package you want to build."
+  puts info + "USAGE: raur pkgname" + plain
   exit
 end
 
 # Check for required executables
 %w(/usr/bin/pacman /usr/bin/makepkg /usr/bin/sudo).each do |file|
   unless File.executable? file
-    print error_header
-    puts "#{file} does not exist or is not executable."
-    print plain
+    puts error + "#{file} does not exist or is not executable." + plain
     exit
   end
 end
 
 unless File.writable? aurdir
-  print error_header
-  puts "Directory #{aurdir} does not exist or is not writable."
-  print plain
+  puts error + "Directory #{aurdir} does not exist or is not writable." + plain
   exit
 end
 
@@ -51,26 +44,18 @@ pkgdir = "#{aurdir}/#{pkg}"
 
 # Determine if a package directory with this name exists
 if File.directory? pkgdir
-  print info_header
-  print "Remove existing directory #{pkgdir} ? [y/n] "
-  print plain
+  print info + "Remove existing directory #{pkgdir} ? [y/n] " + plain
   puts input = STDIN.getch
   case input
   when 'y', 'Y'
-    print info_header
-    puts "Removing #{pkgdir}"
-    print plain
+    puts info + "Removing #{pkgdir}" + plain
     FileUtils.rm_rf pkgdir
   else
-    print info_header
-    print "Continue building #{pkg} ? [y/n] "
-    print plain
+    print info + "Continue building #{pkg} ? [y/n] " + plain
     puts input = STDIN.getch
     case input
     when 'y', 'Y'
-      print info_header
-      puts "Writing over existing #{pkgdir}"
-      print plain
+      puts info + "Writing over existing #{pkgdir}" + plain
     else
       exit
     end
@@ -84,13 +69,11 @@ tarball = "#{aurdir}/#{pkg}.tar.gz"
 begin
   File.open(tarball, 'wb') {|f| f.write open(url).read }
 rescue OpenURI::HTTPError
-  print error_header
-  puts $!
-  puts plain + url
+  puts error + $!.to_s + plain
+  puts url
   exit
 rescue
-  print error_header
-  puts $! + plain
+  puts error + $!.to_s + plain
   exit
 end
 
@@ -100,17 +83,16 @@ begin
   tgz = Zlib::GzipReader.new(File.open(tarball, 'rb'))
   Archive::Tar::Minitar.unpack(tgz, aurdir)
 rescue
-  print error_header
-  puts $! + plain
+  puts error + $!.to_s + plain
   exit
 end
 
 # Build
 Dir.chdir(pkgdir)
-unless `makepkg -sf`
-  print error_header
-  puts "makepkg failed."
-  print plain
+system 'makepkg -sf'
+
+unless $?.to_i.zero?
+  puts error + "makepkg failed." + plain
   exit
 end
 
@@ -125,11 +107,11 @@ files.map do |f|
 end
 
 # Install
-puts exit_status = `sudo pacman -U --noconfirm #{pkgfile}`
-unless exit_status.to_i.zero?
-  print error_header
-  puts "Failed to install #{pkgfile}"
-  print plain
+# TODO: Add --noconfirm option
+system "sudo pacman -U #{pkgfile}"
+
+unless $?.to_i.zero?
+  puts error + "Failed to install #{pkgfile}" + plain
   exit
 end
 
@@ -137,11 +119,8 @@ end
 begin
   File.delete(tarball)
 rescue
-  print error_header
-  puts $! + plain
+  puts error + $!.to_s + plain
   exit
 end
 
-print info_header
-puts "Installed #{pkg}"
-print plain
+puts info + "Installed #{pkg}" + plain
