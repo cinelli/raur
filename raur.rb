@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
-#
 # raur
-#
 # A simple AUR helper in Ruby
 # Depends on pacman, makepkg, sudo, and the minitar gem
 #
