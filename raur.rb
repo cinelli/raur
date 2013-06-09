@@ -35,98 +35,85 @@ PLAIN = "\e[0;0m"
 ERROR = "#{RED}==> ERROR: #{WHITE}"
 INFO  = "#{GREEN}==> #{WHITE}"
 
-pkg = ARGV.first
-
-if pkg.nil?
-  puts ERROR + "No argument given. Specify the AUR package you want to build."
-  puts INFO + "USAGE: raur pkgname" + PLAIN
-  exit
+def info s
+  print INFO + s + PLAIN
 end
 
-# Check for required executables
-%w(/usr/bin/pacman /usr/bin/makepkg /usr/bin/sudo).each do |file|
-  unless File.executable? file
-    puts ERROR + "#{file} does not exist or is not executable." + PLAIN
-    exit
+begin
+  pkg = ARGV.first
+
+  if pkg.nil?
+    raise "No argument given. Specify the AUR package you want to build.\n" +
+          "#{INFO}Usage: raur pkgname"
   end
-end
 
-unless File.writable? aurdir
-  puts ERROR + "Directory #{aurdir} does not exist or is not writable." + PLAIN
-  exit
-end
-
-pkgdir = "#{aurdir}/#{pkg}"
-
-# Determine if a package directory with this name exists
-if File.directory? pkgdir
-  print INFO + "Remove existing directory #{pkgdir} ? [y/N] " + PLAIN
-  puts input = STDIN.getch
-  case input
-  when 'y', 'Y'
-    puts INFO + "Removing #{pkgdir}" + PLAIN
-    FileUtils.rm_rf pkgdir
-  else
-    print INFO + "Continue building #{pkg} ? [Y/n] " + PLAIN
-    puts input = STDIN.getch
-    case input
-    when 'y', 'Y', "\r"
-      puts INFO + "Writing over existing #{pkgdir}" + PLAIN
-    else
-      exit
+  # Check for required executables
+  %w(/usr/bin/pacman /usr/bin/makepkg /usr/bin/sudo).each do |file|
+    unless File.executable? file
+      raise "#{file} does not exist or is not executable."
     end
   end
-end
 
-url = "https://aur.archlinux.org/packages/#{pkg[0..1]}/#{pkg}/#{pkg}.tar.gz"
-tarball = "#{aurdir}/#{pkg}.tar.gz"
+  unless File.writable? aurdir
+    raise "Directory #{aurdir} does not exist or is not writable."
+  end
 
-def die
-  puts ERROR + $!.to_s + PLAIN
-  exit
-end
+  pkgdir = "#{aurdir}/#{pkg}"
 
-# Download tarball
-begin
+  # Determine if a package directory with this name exists
+  if File.directory? pkgdir
+    info "Remove existing directory #{pkgdir} ? [y/N] "
+    puts input = STDIN.getch
+    case input
+    when 'y', 'Y'
+      info "Removing #{pkgdir}\n"
+      FileUtils.rm_rf pkgdir
+    else
+      info "Continue building #{pkg} ? [Y/n] "
+      puts input = STDIN.getch
+      case input
+      when 'y', 'Y', "\r"
+        info "Writing over existing #{pkgdir}\n"
+      else
+        exit
+      end
+    end
+  end
+
+  url = "https://aur.archlinux.org/packages/#{pkg[0..1]}/#{pkg}/#{pkg}.tar.gz"
+  tarball = "#{aurdir}/#{pkg}.tar.gz"
+
+  # Download tarball
   File.open(tarball, 'wb') {|f| f.write open(url).read }
-rescue OpenURI::HTTPError
-  puts ERROR + $!.to_s + PLAIN
-  puts url
-  exit
-rescue
-  die
-end
 
-# Extract
-begin
+  # Extract
   tgz = Zlib::GzipReader.new(File.open(tarball, 'rb'))
   Archive::Tar::Minitar.unpack(tgz, aurdir)
+
+  # Build
+  Dir.chdir(pkgdir)
+  system 'makepkg -sf'
+  raise "makepkg failed." unless $?.to_i.zero?
+
+  # Sort files in package directory chronologically
+  pkgfile = Dir.entries(pkgdir).sort_by {|f|
+    File.mtime(File.join(pkgdir,f))
+  }.last
+
+  # Install
+  # TODO: Add --noconfirm option
+  system "sudo pacman -U #{pkgfile}"
+  raise "Failed to install #{pkgfile}" unless $?.to_i.zero?
+
+  # Cleanup
+  File.delete(tarball)
+
+  info "Installed #{pkg}\n"
+
+rescue OpenURI::HTTPError
+  puts ERROR + $!.to_s + PLAIN + "\n" + url
+  exit
 rescue
-  die
-end
-
-# Build
-Dir.chdir(pkgdir)
-system 'makepkg -sf'
-
-unless $?.to_i.zero?
-  puts ERROR + "makepkg failed." + PLAIN
+  puts ERROR + $!.to_s + PLAIN
   exit
 end
-
-# Sort files in package directory chronologically
-pkgfile = Dir.entries(pkgdir).sort_by{|f| File.mtime(File.join(pkgdir,f))}.last
-
-# Install
-# TODO: Add --noconfirm option
-system "sudo pacman -U #{pkgfile}"
-
-unless $?.to_i.zero?
-  puts ERROR + "Failed to install #{pkgfile}" + PLAIN
-  exit
-end
-
-# Cleanup
-begin File.delete(tarball) rescue die end
-
-puts INFO + "Installed #{pkg}" + PLAIN
