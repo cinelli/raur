@@ -92,8 +92,7 @@ begin
 
   # Build
   Dir.chdir(pkgdir)
-  system 'makepkg -sf'
-  raise "makepkg failed." unless $?.to_i.zero?
+  raise "makepkg failed." unless system "makepkg -sf"
 
   # Sort files in package directory chronologically
   pkgfile = Dir.entries(pkgdir).sort_by {|f|
@@ -102,8 +101,7 @@ begin
 
   # Install
   # TODO: Add --noconfirm option
-  system "sudo pacman -U #{pkgfile}"
-  raise "Failed to install #{pkgfile}" unless $?.to_i.zero?
+  raise "Failed to install #{pkgfile}" unless system "sudo pacman -U #{pkgfile}"
 
   # Cleanup
   File.delete(tarball)
