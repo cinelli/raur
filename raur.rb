@@ -6,10 +6,10 @@
 #
 # Copyright (c) 2013 Boohbah <boohbah at gmail.com>
 # 
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,10 +17,9 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aurdir = "/home/user/aur" # Change this
+aurdir = "/hhome/user/aur" # Change this
 
 require 'archive/tar/minitar'
 require 'io/console'
@@ -30,13 +29,13 @@ require 'open-uri'
 RED   = "\e[1;31m"
 GREEN = "\e[0;32m"
 WHITE = "\e[1;37m"
-PLAIN = "\e[0;0m"
+RC = "\e[0m"
 
 ERROR = "#{RED}==> ERROR: #{WHITE}"
 INFO  = "#{GREEN}==> #{WHITE}"
 
 def info s
-  print INFO + s + PLAIN
+  print INFO + s + RC
 end
 
 begin
@@ -54,9 +53,9 @@ begin
     end
   end
 
-  unless File.writable? aurdir
-    raise "Directory #{aurdir} does not exist or is not writable."
-  end
+  #unless File.writable? aurdir
+  #  raise "Directory #{aurdir} does not exist or is not writable."
+  #end
 
   pkgdir = "#{aurdir}/#{pkg}"
 
@@ -94,13 +93,12 @@ begin
   Dir.chdir(pkgdir)
   raise "makepkg failed." unless system "makepkg -sf"
 
-  # Sort files in package directory chronologically
+  # Find newest file
   pkgfile = Dir.entries(pkgdir).sort_by {|f|
     File.mtime(File.join(pkgdir,f))
   }.last
 
   # Install
-  # TODO: Add --noconfirm option
   raise "Failed to install #{pkgfile}" unless system "sudo pacman -U #{pkgfile}"
 
   # Cleanup
@@ -109,9 +107,7 @@ begin
   info "Installed #{pkg}\n"
 
 rescue OpenURI::HTTPError
-  puts ERROR + $!.to_s + PLAIN + "\n" + url
-  exit
+  puts "#{ERROR}#{$!}#{RC}\n#{url}"
 rescue
-  puts ERROR + $!.to_s + PLAIN
-  exit
+  puts "#{ERROR}#{$!}#{RC}"
 end
