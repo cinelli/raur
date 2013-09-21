@@ -77,14 +77,7 @@ if File.directory? pkgdir
     puts "Removing #{pkgdir}"
     FileUtils.rm_rf pkgdir
   else
-    print "Continue building #{pkg} ? [Y/n] "
-    puts input = STDIN.getch
-    case input
-    when 'y', 'Y', "\r"
-      puts "Writing over existing #{pkgdir}"
-    else
-      exit
-    end
+    puts "Writing over existing #{pkgdir}"
   end
 end
 
