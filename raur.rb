@@ -21,8 +21,12 @@
 
 aurdir = "/home/user/aur" # Change this
 
-require 'io/console'
+unless File.directory? aurdir
+  raise Errno::ENOENT, aurdir
+end
+
 require 'open-uri'
+require 'io/console'
 require 'rubygems/package'
 
 # https://gist.github.com/sinisterchipmunk/1335041
@@ -89,11 +93,13 @@ tarball = "#{aurdir}/#{pkg}.tar.gz"
 
 # Download tarball
 begin
-  File.open(tarball, 'wb') {|f| f.write open(url).read }
+  file = open(url).read
 rescue OpenURI::HTTPError
   puts "#{url}\n#{$!}"
   exit
 end
+
+File.open(tarball, 'wb') {|f| f.write file }
 
 # Extract
 tgz = Zlib::GzipReader.new(File.open(tarball, 'rb'))
