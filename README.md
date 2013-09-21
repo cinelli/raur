@@ -1,13 +1,13 @@
-raur
-======================
+# raur
+
 A simple AUR helper in Ruby
 
-Usage
------
+## Usage
+
     raur package
 
-License
-----------
+## License
+
 Copyright &copy; 2013 Boohbah <<boohbah@gmail.com>>
 
 Licensed under the [GPL License, Version 2.0][GPL]  
