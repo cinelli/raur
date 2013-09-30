@@ -87,20 +87,20 @@ tarball = "#{aurdir}/#{pkg}.tar.gz"
 
 # Download tarball
 begin
-  file = open(url).read
+  resp = open(url)
 rescue OpenURI::HTTPError
-  puts "#{url}\n#{$!}"
-  exit
+  abort "#{url}\n#{$!}"
 end
 
-File.open(tarball, 'wb') {|f| f.write file }
+# Write response after handling possible HTTP error
+File.open(tarball, 'wb') {|f| f.write resp.read }
 
 # Extract
 tgz = Zlib::GzipReader.new(File.open(tarball, 'rb'))
-untar(tgz, aurdir)
+untar tgz, aurdir
 
 # Build
-Dir.chdir(pkgdir)
+Dir.chdir pkgdir
 unless system "makepkg -sf"
   raise "makepkg failed."
 end
@@ -116,6 +116,6 @@ unless system "sudo pacman -U #{pkgfile}"
 end
 
 # Cleanup
-File.delete(tarball)
+File.delete tarball
 
 puts "Installed #{pkg}"
