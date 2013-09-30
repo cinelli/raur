@@ -3,6 +3,7 @@
 # raur
 # A simple AUR helper in Ruby
 # Depends on pacman, makepkg, sudo
+# https://github.com/Boohbah/raur
 #
 # Copyright (c) 2013 Boohbah <boohbah at gmail.com>
 # 
