@@ -2,6 +2,10 @@
 
 A simple AUR helper in Ruby
 
+https://github.com/Boohbah/raur
+
+https://aur.archlinux.org/packages/raur-git
+
 ## Usage
 
     raur package
