@@ -4,7 +4,7 @@
 # A simple AUR helper in Ruby
 # Depends on pacman, makepkg, sudo
 # https://github.com/Boohbah/raur
-# https://aur.archlinux.org/packages/raur-git/
+# https://aur.archlinux.org/packages/raur-git
 #
 # Copyright (c) 2013 Boohbah <boohbah at gmail.com>
 # 
