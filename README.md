@@ -6,6 +6,10 @@ A simple AUR helper in Ruby
 
     raur package
 
+## Todo
+
+Resolve dependencies
+
 ## License
 
 Copyright &copy; 2013 Boohbah <<boohbah@gmail.com>>
