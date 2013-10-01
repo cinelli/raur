@@ -30,6 +30,7 @@ end
 require 'open-uri'
 require 'io/console'
 require 'rubygems/package'
+require 'fileutils' # For ruby versions < 2.0.0
 
 # https://gist.github.com/sinisterchipmunk/1335041
 def untar(io, destination)
