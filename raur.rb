@@ -21,16 +21,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-aurdir = "/home/user/aur" # Change this
-
-unless File.directory? aurdir
-  raise Errno::ENOENT, aurdir
-end
+url	= "https://aur.archlinux.org/packages/"
+aurdir	= Dir.getwd
 
 require 'open-uri'
 require 'io/console'
 require 'rubygems/package'
 require 'fileutils' # For ruby versions < 2.0.0
+
+unless `type -a pacman >/dev/null` && `type -a makepkg >/dev/null` && `type -a sudo >/dev/null`
+  abort("ERROR: Missing a required dependancy: pacman, makepkg, sudo")
+end
+
+def ask(question)
+  puts question
+  response = STDIN.gets.chomp
+  case(response)
+  when /^y(es)?$/i
+    true
+  when /^no?$/i
+    false
+  else
+    ask question
+  end
+end
 
 # https://gist.github.com/sinisterchipmunk/1335041
 def untar(io, destination)
@@ -56,46 +70,33 @@ def untar(io, destination)
 end
 
 pkg = ARGV.first
-
 if pkg.nil?
-  raise "No argument given. Specify the AUR package you want to build.\n" +
-        "Usage: raur pkgname"
+  abort("ERROR: No argument given. Specify the AUR package you want to build.\nUsage: raur pkgname")
 end
 
-# Check for required executables
-%w(/usr/bin/pacman /usr/bin/makepkg /usr/bin/sudo).each do |file|
-  unless File.executable? file
-    raise "#{file} does not exist or is not executable."
-  end
-end
-
-pkgdir = "#{aurdir}/#{pkg}"
+tarDL	= "#{url}/#{pkg[0..1]}/#{pkg}/#{pkg}.tar.gz"
+tarball	= "#{aurdir}/#{pkg}.tar.gz"
+pkgdir	= "#{aurdir}/#{pkg}"
 
 # Determine if a package directory with this name exists
-if File.directory? pkgdir
-  print "Remove existing directory #{pkgdir} ? [y/N] "
-  puts input = STDIN.getch
-  case input
-  when 'y', 'Y'
-    puts "Removing #{pkgdir}"
-    FileUtils.rm_rf pkgdir
+if Dir.exists? pkgdir
+  overwrite = ask("Overwrite existing directory #{pkgdir}? [y/N] ")
+  if overwrite == true
+    puts "Overwriting #{pkgdir}"
   else
-    puts "Writing over existing #{pkgdir}"
+    abort("ERROR: #{pkgdir} already exists.")
   end
 end
-
-url = "https://aur.archlinux.org/packages/#{pkg[0..1]}/#{pkg}/#{pkg}.tar.gz"
-tarball = "#{aurdir}/#{pkg}.tar.gz"
 
 # Download tarball
 begin
-  resp = open(url)
+  resp = open("#{tarDL}")
 rescue OpenURI::HTTPError
-  abort "#{url}\n#{$!}"
+  abort("ERROR: #{tarDL}\n#{$!}")
 end
 
 # Write response after handling possible HTTP error
-File.open(tarball, 'wb') {|f| f.write resp.read }
+File.open(tarball, 'wb') {|f| f.write resp.read}
 
 # Extract
 tgz = Zlib::GzipReader.new(File.open(tarball, 'rb'))
@@ -103,21 +104,10 @@ untar tgz, aurdir
 
 # Build
 Dir.chdir pkgdir
-unless system "makepkg -sf"
-  raise "makepkg failed."
-end
-
-# Find newest file
-pkgfile = Dir.entries(pkgdir).sort_by {|f|
-  File.mtime(File.join(pkgdir, f))
-}.last
-
-# Install
-unless system "sudo pacman -U #{pkgfile}"
-  raise "Failed to install #{pkgfile}"
+unless system 'makepkg -sif'
+  abort("ERROR: makepkg failed. #{pkg} was not installed.")
 end
 
 # Cleanup
 File.delete tarball
-
 puts "Installed #{pkg}"
